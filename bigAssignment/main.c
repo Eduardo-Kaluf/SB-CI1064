@@ -1,8 +1,16 @@
-#include <stdio.h>
+#include "memory_api.h"
+
 
 int main() {
+    int x;
 
-    printf("Hello World!\n");
+    setup_brk();
+
+    dismiss_brk();
+
+    memory_alloc(1);
+
+    memory_free(&x);
 
     return 0;
 }

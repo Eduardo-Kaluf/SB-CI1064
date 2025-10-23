@@ -2,15 +2,15 @@
 #define MEMORY_API_H_H
 
 //Obtém o endereço de brk
-void setup_brk();
+extern void setup_brk();
 
 //Restaura o endereço de brk
-void dismiss_brk();
+extern void dismiss_brk();
 
 //Aloca memória
-void* memory_alloc(unsigned long int bytes);
+extern void* memory_alloc(unsigned long int bytes);
 
 //Marca um bloco ocupado como livre
-int memory_free(void *pointer);
+extern int memory_free(void *pointer);
 
 #endif //MEMORY_API_H_H

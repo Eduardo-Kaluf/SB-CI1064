@@ -1,10 +1,9 @@
 #include "memory_api.h"
 
-unsigned long int current_brk;
-unsigned long int base_heap;
+unsigned long int current_brk = 0;
+unsigned long int base_heap = 0;
 
 void setup_brk() {
-
 
     //syscall para obter o brk
     //base_brk = brk(0);
@@ -21,6 +20,7 @@ void* memory_alloc(unsigned long int bytes) {
     //    a) //1. Procura bloco livre com tamanho igual ou maior que a
     //    requisição
     
+
     if(base_heap == current_brk) {
         //sbrk(current_brk + bytes + 9); TODOTODO tratar caso erro...
         current_brk += bytes + 9;
@@ -28,48 +28,55 @@ void* memory_alloc(unsigned long int bytes) {
 
     unsigned char *iterador = base_heap + 9; //isso ta na stack fuck
  
-    unsigned long int tamanho = *((unsigned long int *)(iterador - 8));
+    unsigned long int tamanho_atual = 0;
+    unsigned long int tamanho_maior = 0;
+    unsigned char * maior = 0;
 
-    unsigned char ocupado = *((unsigned char*)(iterador - 9));
-
-    //procura enquanto o não achar um bloco que tenha o tamanho necessario e não seja ocupado
-    while ((tamanho < bytes || ocupado) && ((unsigned long int)iterador < current_brk)) {
-        iterador += tamanho + 9;
-        tamanho = *((unsigned long int *)(iterador - 8));
+    unsigned char ocupado = 0;
+    //percorre toda a heap, quando acaba ele achou o maior bloco livre
+    while (((unsigned long int)iterador < current_brk)) {
+        tamanho_atual = *((unsigned long int *)(iterador - 8));
         ocupado = *((unsigned char *)(iterador - 9));
+
+        if(tamanho_maior < tamanho_atual && !ocupado)
+            maior = iterador;
+            tamanho_maior = tamanho_atual;
+        iterador += tamanho_atual + 9;
     }
 
-    //achou um bloco valido => b) se não => c
+    //achou o maior bloco valido => b) se não => c
 
     //    b) //2. Se encontrar, marca ocupação, utiliza os bytes
     //    necessários do bloco, retornando o endereço
     //    correspondente
 
-    //salva como ocupado e retorna o novo bloco!!
-    if((unsigned long)iterador < current_brk){    
-        *((unsigned char*)(iterador - 9)) = 1;   
+    // verifica se há um bloco valido ja existente (maior só eh alterado se existe um bloco, 
+    // caso contrario valerá 0)
+    if((unsigned long)maior != 0){    
+
+        *((unsigned char*)(maior - 9)) = (char)1;  
 
         // Cria um novo bloco se bloco livre exceder o tamanho do bloco 
         // requisitado e houver bytes extras suficientes para alocar um 
         // novo registro com, no mínimo, 1 byte no bloco de dados.
-        if(tamanho >= bytes + 10){
-            unsigned char *new_block = iterador + bytes + 9;
+        if(tamanho_maior >= bytes + 10){
+            unsigned char *new_block = maior + bytes + 9;
             *(new_block - 9) = (char)0;
-            *(unsigned long int *)(new_block - 8) = tamanho - (bytes + 9);
+            *(unsigned long int *)(new_block - 8) = tamanho_maior - (bytes + 9);
             
-            *((unsigned long int *)(iterador - 8)) = bytes;
+            *((unsigned long int *)(maior - 8)) = bytes;
         }
 
     } else {//    c) //3. Se não encontrar, abre espaço para um novo bloco
-        //ITERADOR EXATAMENTE IGUAL A CURRENT_BRK + 9 ENTAO
         //sbrk(current_brk + bytes + 9); TODOTODO tratar caso erro...
+        maior = current_brk + 9;
         current_brk += bytes + 9;
-        //*((unsigned char*)(iterador - 9)) = 1;
-        //*((unsigned long*)(iterador - 8)) = bytes;
+        //*((unsigned char*)(maior - 9)) = 1;
+        //*((unsigned long*)(maior - 8)) = bytes;
     }
 
 
-    return (void *) (unsigned long)iterador;
+    return (void *) (unsigned long)maior;
 }
 
 int memory_free(void *pointer) {
@@ -96,4 +103,3 @@ int memory_free(void *pointer) {
 
     return 0;
 }
-

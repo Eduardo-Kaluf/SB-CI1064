@@ -86,7 +86,7 @@ void* memory_alloc(unsigned long int bytes) {
 int memory_free(void *pointer) {
     
     //erro: ponteiro não está contido na heap, logo invalido
-    if((unsigned long)pointer < (base_heap + BUSY_OFFSET)  && current_brk <= (unsigned long)pointer){
+    if((unsigned long)pointer < (base_heap + BUSY_OFFSET) || current_brk <= (unsigned long)pointer){
         return -1;
     }
     

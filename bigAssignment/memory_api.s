@@ -1,6 +1,8 @@
 section .data
     message db "Hello World!", 0xA
     message_len equ $ - message
+    SIZE_OFFSET: dq 8
+    BUSY_OFFSET: dq 9
 
 section .bss
     global base_heap
@@ -14,6 +16,7 @@ section .text
     global dismiss_brk
     global memory_alloc
     global memory_free
+    global my_sbrk
 
     ; brief:
     ;   makes a syscall to get the heap initial brk.
@@ -60,12 +63,49 @@ section .text
         mov rdx, message_len
         syscall
 
+    ; args:
+    ;   RDI: address to free
     memory_free:
-        mov rax, 1
-        mov rdi, 1
-        mov rsi, message
-        mov rdx, message_len
-        syscall
+        push rbp
+        mov rbp, rsp
+
+        mov r8, [base_heap] ; r8 will be our iterator
+        add r8, [BUSY_OFFSET]
+
+        cmp rdi, r8
+        jle _memory_free_error1
+        cmp rdi, [current_brk]
+        jge _memory_free_error1
+
+    _loop_start:
+        cmp r8, rdi
+        jge _loop_out
+        mov r9, r8
+        sub r9, [SIZE_OFFSET]
+        add r8, [r9]
+        add r8, [BUSY_OFFSET]
+        jmp _loop_start
+
+    _loop_out:
+        cmp r8, rdi
+        jg _memory_free_error2
+
+        sub r8, [BUSY_OFFSET]
+        mov byte [r8], 0
+
+        mov rax, 0
+        jmp _memory_free_ret
+
+    _memory_free_error1:
+        mov rax, -1
+        jmp _memory_free_ret
+
+    _memory_free_error2:
+        mov rax, -2
+
+    _memory_free_ret:
+        pop rbp
+        ret
 
     ; brief:
     ;   adds the increment (RDI) to the current brk to get a new desired brk.
@@ -77,7 +117,7 @@ section .text
     ;   setup_brk should already been called before using this function (current_brk has to be set at least once)
     ; args:
     ;   RDI: bytes
-    sbrk:
+    my_sbrk:
         push rbp
         mov rbp, rsp
 

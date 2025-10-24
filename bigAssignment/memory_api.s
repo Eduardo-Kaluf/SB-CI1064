@@ -9,6 +9,8 @@ section .bss
     global current_brk
     current_brk: resq 1
     base_heap: resq 1
+    global debug
+    debug: resq 1
 
 DEFAULT REL
 section .text
@@ -56,12 +58,7 @@ section .text
         pop rbp
         ret
 
-    memory_alloc:
-        mov rax, 1
-        mov rdi, 1
-        mov rsi, message
-        mov rdx, message_len
-        syscall
+    
 
     ; args:
     ;   RDI: address to free
@@ -73,7 +70,7 @@ section .text
         add r8, [BUSY_OFFSET]
 
         cmp rdi, r8
-        jle _memory_free_error1
+        jl _memory_free_error1
         cmp rdi, [current_brk]
         jge _memory_free_error1
 
@@ -143,5 +140,120 @@ section .text
         mov rax, -1
 
     _sbrk_end:
+        pop rbp
+        ret
+
+memory_alloc:
+        push rbp
+
+        mov rbp, rsp
+
+        mov [rbp - 56], rdi
+        mov rdx, [base_heap]
+        mov rax, [current_brk]
+        cmp rdx, rax
+        jne .L4
+        mov QWORD rdi, [rbp - 56]
+        add rdi, [BUSY_OFFSET]
+        call my_sbrk
+
+        mov rax, [current_brk]
+        sub rax, 8
+        mov QWORD rdi, [rbp - 56]
+        mov QWORD [rax], rdi
+        sub rax, 1
+        mov BYTE [rax], 0
+
+    .L4:
+        mov	rax, [base_heap]
+        add	rax, 9
+        mov	[rbp - 40], rax
+        mov	QWORD [rbp - 16], 0
+        mov rdi, [rbp - 56]
+        mov	QWORD [rbp - 32], rdi
+        mov	QWORD [rbp - 24], 0
+        mov	BYTE [rbp - 41], 0
+        jmp	.L5
+    .L7:
+        mov	rax, [rbp - 40]
+        mov	rax, [rax - 8]
+        mov	[rbp - 16], rax
+        mov	rax, [rbp - 40]
+        movzx eax, byte [rax - 9]
+        mov	[rbp - 41], al
+        mov	rax, [rbp - 32]
+        cmp	rax, [rbp - 16]
+        jg	.L6
+        cmp	byte [rbp - 41], 0
+        jne	.L6
+        mov	rax, [rbp - 40]
+        mov	[rbp - 24], rax
+        mov	rax, [rbp - 16]
+        mov	[rbp - 32], rax
+
+    .L6:
+        mov	rax, [rbp - 16]
+        add	rax, 9
+        add	[rbp - 40], rax
+    .L5:
+        mov	rdx, [rbp - 40]
+        mov	rax, [current_brk]
+        cmp	rdx, rax
+        jb	.L7
+
+        cmp	QWORD [rbp - 24], 0
+        je	.L8
+        
+        mov	rax, [rbp - 24]
+        sub	rax, 9
+        mov	BYTE [rax], 1
+        mov	rax, [rbp - 56]
+        add	rax, 10
+        cmp	QWORD [rbp - 32], rax
+        jb	.L9
+        mov	rax, [rbp - 56]
+        lea	rdx, [rax + 9]
+        mov	rax, [rbp - 24]
+        add	rax, rdx
+        mov	[rbp - 8], rax
+        mov	rax, [rbp - 8]
+        sub	rax, 9
+        mov	BYTE [rax], 0
+        mov	rax, [rbp - 32]
+        sub	rax, [rbp - 56]
+        mov	rdx, rax
+        mov	rax, [rbp - 8]
+        sub	rax, 8
+        sub	rdx, 9
+        mov	[rax], rdx
+        mov	rax, [rbp - 24]
+        lea	rdx, [rax - 8]
+        mov	rax, [rbp - 56]
+        mov	[rdx], rax
+        jmp	.L9
+    .L8:
+
+        mov rdi, [rbp - 56]
+        add  rdi, [BUSY_OFFSET]
+        call my_sbrk
+        
+        mov rax, [current_brk]
+        lea rdx, [rax + 9]
+        mov rax, [rbp - 24]
+        mov [rax], rdx
+        mov rdx, [current_brk]
+        mov rax, [rbp - 56]
+        add rax, rdx
+        add rax, 9
+        mov [current_brk], rax
+        mov rax, [rbp - 24]
+        sub rax, 9
+        mov byte [rax], 1
+        mov rax, [rbp - 24]
+        lea rdx, [rax - 8]
+        mov rax, [rbp - 56]
+        mov [rdx], rax
+    .L9:
+        mov rax, [rbp - 24]
         pop rbp
         ret

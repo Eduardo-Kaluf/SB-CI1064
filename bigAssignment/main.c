@@ -3,7 +3,7 @@
 
 extern void* base_heap;
 extern void* current_brk;
-
+extern void* debug;
 extern long *my_sbrk(long bytes);
 
 int main() {
@@ -14,16 +14,19 @@ int main() {
 
     printf("The current heap is: %p\n", current_brk);
 
-    my_sbrk(10);
+
+    int *pinteiro = memory_alloc(4);
+    printf("The debug is: %p\n", debug);
+
+    *pinteiro = 9;
+    printf("The number is: %d\n", *pinteiro);
 
     printf("The current heap is: %p\n", current_brk);
+    printf("The base is: %p\n", base_heap);
+    printf("The pinteiro is: %p\n", pinteiro);
+    printf("erro: %d\n", memory_free(pinteiro));
 
 
     dismiss_brk();
-
-    memory_alloc(1);
-
-    memory_free(&x);
-
     return 0;
 }

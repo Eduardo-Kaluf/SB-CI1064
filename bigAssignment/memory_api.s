@@ -203,7 +203,7 @@ memory_alloc:
 
         cmp	QWORD [rbp - 24], 0
         je	.L8
-        
+
         mov	rax, [rbp - 24]
         sub	rax, 9
         mov	BYTE [rax], 1
@@ -232,20 +232,15 @@ memory_alloc:
         mov	[rdx], rax
         jmp	.L9
     .L8:
+        ;maior aponta pra onde era o topo da heap
+        mov rax, [current_brk]
+        add rax, [BUSY_OFFSET]
+        mov [rbp - 24], rax
 
-        mov rdi, [rbp - 56]
+        mov QWORD rdi, [rbp - 56]
         add  rdi, [BUSY_OFFSET]
         call my_sbrk
-        
-        mov rax, [current_brk]
-        lea rdx, [rax + 9]
-        mov rax, [rbp - 24]
-        mov [rax], rdx
-        mov rdx, [current_brk]
-        mov rax, [rbp - 56]
-        add rax, rdx
-        add rax, 9
-        mov [current_brk], rax
+
         mov rax, [rbp - 24]
         sub rax, 9
         mov byte [rax], 1

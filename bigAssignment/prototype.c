@@ -73,7 +73,7 @@ void* memory_alloc(unsigned long int bytes) {
 
     } else {//    c) //3. Se não encontrar, abre espaço para um novo bloco
         //sbrk(current_brk + bytes + BUSY_OFFSET); TODOTODO tratar caso erro...
-        maior = current_brk + BUSY_OFFSET;
+        *((unsigned long*)maior) = current_brk + BUSY_OFFSET;
         current_brk += bytes + BUSY_OFFSET;
         //*((unsigned char*)(maior - BUSY_OFFSET)) = 1;
         //*((unsigned long*)(maior - SIZE_OFFSET)) = bytes;
@@ -91,7 +91,8 @@ int memory_free(void *pointer) {
     }
     
     //percorre toda a heap pra ver se o ponteiro eh valido
-    unsigned char *iterator = base_heap + BUSY_OFFSET;
+    unsigned char *iterator;
+    *((unsigned long *)iterator) = base_heap + BUSY_OFFSET;
     while ((unsigned long)iterator < (unsigned long) pointer){
         iterator += *((unsigned long*)(iterator - SIZE_OFFSET)) + BUSY_OFFSET;
     }
